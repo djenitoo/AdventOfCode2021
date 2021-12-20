@@ -52,23 +52,16 @@ namespace Day14
         }
 
         private static Dictionary<char, long> countOfChars = new Dictionary<char, long>();
-        private static Dictionary<string, long> countOfPairs = new Dictionary<string, long>();
 
         private static long TaskTwo()
         {
             long result = 0;
             int maxSteps = 40;
             var possibleChars = PairInsertionRules.Values.Distinct().Select(x => char.Parse(x)).ToList();
-            var possiblePairs = PairInsertionRules.Keys.Distinct().ToList();
-
+            
             foreach (var ch in possibleChars)
             {
                 countOfChars.Add(ch, 0);
-            }
-
-            foreach (var ch in possiblePairs)
-            {
-                countOfPairs.Add(ch, 0);
             }
 
             for (int i = 0; i < PolymerTemplate.Length; i++)
@@ -78,9 +71,7 @@ namespace Day14
 
             List<string> initialTemplatePairs = GetPairsFromTemplate(PolymerTemplate);
 
-
-            //IteratePairs(initialTemplatePairs, 1);
-            IterateSteps(initialTemplatePairs);
+            IterateSteps(initialTemplatePairs, maxSteps);
 
             long maxOccurence = countOfChars.Values.Max();
             long minOccurence = countOfChars.Values.Min();
@@ -90,72 +81,59 @@ namespace Day14
             return result;
         }
 
-        private static  List<List<string>> pairsBySteps = new List<List<string>>();
-
-        private static void IterateSteps(List<string> initialPairs)
+        private static void IterateSteps(List<string> initialPairs, int maxSteps)
         {
-            pairsBySteps.Add(new List<string>(initialPairs));
+            List<Dictionary<string, long>> pairsBySteps = new List<Dictionary<string, long>>();
 
-            for (int i = 1; i < 40; i++)
+            var step0DictionaryOfPairs = new Dictionary<string, long>();
+
+            foreach (var pr in initialPairs)
+            {
+                if (!step0DictionaryOfPairs.ContainsKey(pr))
+                {
+                    step0DictionaryOfPairs.Add(pr, 0);
+                }
+
+                step0DictionaryOfPairs[pr] += 1;
+            }
+
+            pairsBySteps.Add(step0DictionaryOfPairs);
+
+            for (int i = 1; i <= maxSteps; i++)
             {
                 pairsBySteps.Add(GetNextRoundChildPairs(pairsBySteps[i - 1]));
             }
-        } 
+        }
 
-        private static List<string> GetNextRoundChildPairs(List<string> parentPairs)
+        private static Dictionary<string, long> GetNextRoundChildPairs(Dictionary<string, long> parentPairs)
         {
-            List<string> childPairs = new List<string>();
-
-            foreach (var parentPair in parentPairs)
+            Dictionary<string, long> childPairs = new Dictionary<string, long>();
+            
+            foreach (var kVPair in parentPairs)
             {
-                char resultOfPair = PairInsertionRules[parentPair][0];
+                string parentPair = kVPair.Key;
 
-                childPairs.Add(parentPair[0].ToString() + resultOfPair);
-                childPairs.Add(resultOfPair + parentPair[1].ToString());
+                char resultOfPair = PairInsertionRules[parentPair][0];
+                countOfChars[resultOfPair] += kVPair.Value;
+                string firstPair = parentPair[0].ToString() + resultOfPair;
+                string secondPair = resultOfPair + parentPair[1].ToString();
+
+                if (!childPairs.ContainsKey(firstPair))
+                {
+                    childPairs.Add(firstPair, 0);
+                }
+
+                if (!childPairs.ContainsKey(secondPair))
+                {
+                    childPairs.Add(secondPair, 0);
+                }
+
+                childPairs[firstPair] += kVPair.Value;
+                childPairs[secondPair] += kVPair.Value;
             }
 
             return childPairs;
         }
-
-        //private static void IteratePairs(List<string> pairs, int steps)
-        //{
-        //    //if (steps > 40)
-        //    //{
-        //    //    return;
-        //    //}
-        //    Dictionary<string, long> innerCountOfPairs = new Dictionary<string, long>();
-        //    var possiblePairs = PairInsertionRules.Keys.Distinct().ToList();
-
-        //    //foreach (var ch in possiblePairs)
-        //    //{
-        //    //    countOfPairs.Add(ch, 0);
-        //    //}
-
-        //    foreach (string pair in pairs)
-        //    {
-        //        if (countOfPairs.ContainsKey(pair))
-        //        {
-
-        //        }
-        //        else
-        //        {
-
-        //        }
-        //        for (int i = 0; i < 40; i++)
-        //        {
-        //            char resultOfPair = PairInsertionRules[pair][0];
-        //            //countOfChars[resultOfPair] += 1;
-
-        //            countOfPairs[pair] += 1;
-
-        //            var newSubPairs = new List<string>();
-        //            newSubPairs.Add(pair[0].ToString() + resultOfPair);
-        //            newSubPairs.Add(resultOfPair + pair[1].ToString());
-
-        //            IteratePairs(newSubPairs, steps + 1);
-        //        }
-        //    }
-        //}
 
         private static List<string> GetPairsFromTemplate(string template)
         {
